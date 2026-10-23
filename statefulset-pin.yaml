@@ -1,0 +1,162 @@
+
+# ---------------------------------------------------------------------
+# PV 1 : worker1 고정, data-web-0 PVC 전용
+# ---------------------------------------------------------------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-volume-1
+spec:
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  claimRef:
+    namespace: default
+    name: data-web-0
+  hostPath:
+    path: /mnt/data-1
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: ["worker1"]
+---
+# ---------------------------------------------------------------------
+# PV 2 : worker2 고정, data-web-1 PVC 전용
+# ---------------------------------------------------------------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-volume-2
+spec:
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  claimRef:
+    namespace: default
+    name: data-web-1
+  hostPath:
+    path: /mnt/data-2
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: ["worker2"]
+---
+# ---------------------------------------------------------------------
+# PV 3 : worker3 고정, data-web-2 PVC 전용
+# ---------------------------------------------------------------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-volume-3
+spec:
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  claimRef:
+    namespace: default
+    name: data-web-2
+  hostPath:
+    path: /mnt/data-3
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: ["worker3"]
+---
+# ---------------------------------------------------------------------
+# Headless Service : 파드별 DNS (web-0.web, web-1.web, web-2.web)
+#   selector를 파드 라벨(app: nginx)과 일치시킴
+# ---------------------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  clusterIP: None
+  selector:
+    app: nginx
+  ports:
+  - port: 80
+    name: web
+---
+# ---------------------------------------------------------------------
+# StatefulSet
+#   PVC 이름 = <volumeClaimTemplates명>-<sts명>-<순번>
+#            = data-web-0, data-web-1, data-web-2
+#   -> claimRef로 예약된 PV에 바인딩 -> PV nodeAffinity의 노드로 스케줄링
+# ---------------------------------------------------------------------
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+spec:
+  serviceName: "web"
+  replicas: 3
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+          name: web
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/nginx/html
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "manual"
+      resources:
+        requests:
+          storage: 1Gi
+---
+# ---------------------------------------------------------------------
+# 외부 노출용 Service
+# ---------------------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: lb-svc
+spec:
+  type: LoadBalancer
+  #externalIPs:
+  #- 172.16.0.201
+  selector:
+    app: nginx
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80

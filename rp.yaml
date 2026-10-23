@@ -1,0 +1,23 @@
+apiVersion: app.stj.com/v1
+kind: ResourceProfile
+metadata:
+  name: small
+spec:
+  cpu: "250m"
+  memory: "256Mi"
+---
+apiVersion: app.stj.com/v1
+kind: ResourceProfile
+metadata:
+  name: medium
+spec:
+  cpu: "500m"
+  memory: "512Mi"
+---
+apiVersion: app.stj.com/v1
+kind: ResourceProfile
+metadata:
+  name: large
+spec:
+  cpu: "1"
+  memory: "1Gi"

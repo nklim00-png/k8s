@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-resource-deploy
+  namespace: dev
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: sample-app
+  template:
+    metadata:
+      labels:
+        app: sample-app
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx
+        resources:
+          requests: # 최소 보장 자원, 스케줄러는 이 값만큼의 자원이 가능한 노드에만 Pod를 배치합니다.
+            memory: "250Mi"
+            cpu: "250m"
+          limits: # 최대 허용 자원, 이 값을 넘어서면 OOMKill 또는 CPU throttling이 발생합니다.
+            memory: "500Mi"
+            cpu: "1"

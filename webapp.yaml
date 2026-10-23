@@ -1,0 +1,29 @@
+apiVersion: app.stj.com/v1
+kind: WebApp
+metadata:
+  name: nginx-app-small
+  namespace: default
+spec:
+  image: nginx:1.25
+  replicas: 2
+  profile: small
+---
+apiVersion: app.stj.com/v1
+kind: WebApp
+metadata:
+  name: nginx-app-medium
+  namespace: default
+spec:
+  image: nginx:1.25
+  replicas: 2
+  profile: medium
+---
+apiVersion: app.stj.com/v1
+kind: WebApp
+metadata:
+  name: nginx-app-large
+  namespace: default
+spec:
+  image: nginx:1.25
+  replicas: 2
+  profile: large

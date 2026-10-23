@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: task-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: manual #정적, 수동
+  capacity:
+    storage: 10Mi #10M을 초과하는 경우 못담아야 되는데 담을 수 있는 맹점
+  accessModes:
+    - ReadWriteOnce #Once= NODE 하나만 연결하겠다 뜻, ReadWriteMany : 다수 NODE 접근,ReadOnlyMany,ReadWriteOncePod : 특정pod만
+  hostPath:
+    path: "/mnt/data"  #host=node를 말함
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: task-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Mi
+  selector:
+    matchLabels:
+      type: local
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: task-pv-pod
+  labels:
+    app: task-pv-pod
+spec:
+  volumes:
+    - name: task-pv-storage
+      persistentVolumeClaim:
+        claimName: task-pv-claim
+  containers:
+    - name: task-pv-container
+      image: nginx
+      volumeMounts:
+        - mountPath: "/usr/share/nginx/html"
+          name: task-pv-storage

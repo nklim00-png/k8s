@@ -1,0 +1,11 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-lvmpv
+provisioner: local.csi.openebs.io
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  storage: "lvm"
+  volgroup: "vg_nvme0n2"
+  fsType: "xfs"
